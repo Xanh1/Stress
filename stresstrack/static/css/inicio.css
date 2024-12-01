@@ -1,0 +1,154 @@
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300..700&display=swap');
+
+body {
+    min-height: 100vh;
+}
+
+body,
+button,
+a {
+    font-family: "Space Grotesk", sans-serif;
+    font-optical-sizing: auto;
+    font-weight: 500;
+    font-style: normal;
+    color: black;
+}
+
+.likea {
+    font-family: "Space Grotesk", sans-serif;
+    font-optical-sizing: auto;
+    font-weight: 500;
+    font-style: normal;
+    color: black;
+}
+
+ul {
+    margin: 0;
+    padding: 0;
+}
+
+header {
+    height: 12vh;
+}
+
+footer {
+    height: 8vh;
+}
+
+.rounded-4 {
+    border-radius: .6rem;
+}
+
+.text-grisillo {
+    color: #cacaca;
+    font-size: .9rem;
+}
+
+.bg-color-grisillo {
+    background-color: #ececec;
+}
+
+.bg-purple {
+    background-color: #e4dbff;
+}
+
+.bg-good {
+    background-color: #dbffe4;
+}
+
+.bg-not-bad {
+    background-color: #fff4db;
+}
+
+.bg-dangerr {
+    background-color: #ffe4db;
+}
+
+.bg-dying {
+    background-color: #ffdbdb;
+}
+
+
+.main-content {
+    flex-grow: 3;
+    height: calc(100vh - 20vh);
+}
+
+.scrollable-container {
+    max-height: 400px;
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+
+.fs-max {
+    font-size: 4rem;
+}
+
+.fs-7 {
+    font-size: .9rem;
+}
+
+.cursor-pointer {
+    cursor: pointer;
+}
+
+/* modal design */
+
+.modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.493);
+    z-index: 9;
+    align-items: center;
+    justify-content: center;
+}
+
+
+.modal-content {
+    position: relative;
+    background-color: white;
+    padding: 2rem;
+    border-radius: 20px;
+    width: 100%;
+    max-width: 400px;
+    animation: fadeIn 0.3s ease;
+}
+
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: scale(0.9);
+    }
+
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+
+.field {
+    outline: none !important;
+    width: 100%;
+}
+
+.custom-container {
+    width: 100%;
+    max-width: 480px;
+    margin: 0 auto;
+    padding: 0 15px;
+}
+
+.links {
+    color: black;
+    transition: transform 0.3s ease;
+}
+
+.links:hover {
+    transform: scale(1.2);
+}
