@@ -11,6 +11,7 @@ def home(request):
     if request.method == 'POST':
         form = CustomAuthenticationForm(request, request.POST)
         if form.is_valid():
+            print('entrando aca perros')
             email = form.cleaned_data['username']
             password = form.cleaned_data['password']
             user = authenticate(request, email=email, password=password)
@@ -50,9 +51,13 @@ def register(request):
 
     return render(request, 'register.html', {'form_register': form_register, 'form_login': form_login})
 
+from datetime import date
+from django.contrib.auth.decorators import login_required
+from django.shortcuts import render
+from .models import Task
+
 @login_required
 def dashboard(request):
-
     user = request.user
     courses = request.user.enrolled_courses.all()
     tasks = Task.objects.filter(course__in=courses, due_date__gte=date.today()).order_by('due_date')
@@ -60,32 +65,36 @@ def dashboard(request):
     stress = 61
     color = ""
 
-    if stress >= 0 and stress <= 20:
+    if 0 <= stress <= 20:
         color = 'bg-good'
-    elif stress > 20 and stress <= 40:
+    elif 20 < stress <= 40:
         color = 'bg-not-bad'
-    elif stress > 40 and stress <= 60:
+    elif 40 < stress <= 60:
         color = 'bg-dangerr'
-    elif stress > 60 and stress <= 100:
+    elif 60 < stress <= 100:
         color = 'bg-dying'
-
 
     if tasks.exists():
         closest_task = tasks.first()
-    else:
-        closest_task = None
-    
-    context = {
-        'name': user.first_name,
-        'task': {
+        task_info = {
             'title': closest_task.name,
             'date': closest_task.due_date
-        },
+        }
+    else:
+        task_info = {
+            'title': "No hay tareas asignadas",
+            'date': "N/A"
+        }
+    
+    context = {
+        'name': user.first_name or "Usuario",
+        'task': task_info,
         'color': color,
         'stress': stress,
     }
 
     return render(request, 'dashboard/dashboard.html', context)
+
 
 @login_required
 def dash_task(request):
