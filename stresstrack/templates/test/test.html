@@ -1,0 +1,28 @@
+{% extends "base/base.html" %}
+
+{% block content %}
+<div class="container">
+    <h1>{{ test.title }}</h1>
+    <form method="POST">
+        {% csrf_token %}
+        
+        {% for question in questions %}
+            <div class="question">
+                <p><strong>{{ question.text }}</strong></p>
+                
+                <!-- Mostrar las opciones de respuesta definidas en ResponseOption -->
+                {% for option in question.responseoption_set.all %}
+                    <div class="form-check">
+                        <input class="form-check-input" type="radio" name="question_{{ question.id }}" value="{{ option.value }}" id="option_{{ option.value }}">
+                        <label class="form-check-label" for="option_{{ option.value }}">
+                            {{ option.get_selected_option_display }}  <!-- Muestra el texto asociado con la opción -->
+                        </label>
+                    </div>
+                {% endfor %}
+            </div>
+        {% endfor %}
+        
+        <button type="submit" class="btn btn-primary">Enviar respuestas</button>
+    </form>
+</div>
+{% endblock %}

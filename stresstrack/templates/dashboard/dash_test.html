@@ -1,6 +1,5 @@
 {% extends "base/base.html" %}
 
-
 {% block content %}
 
 <header class="container-fluid d-flex justify-content-between align-items-center py-3 px-3">
@@ -32,32 +31,39 @@
         </div>
         <div class="col-10 p-2">
             <div class="container p-2 rounded-4">
-                <h1>Tareas</h1>
+                <h1>Tests</h1>
             </div>
             <div class="scrollable-container">
                 {% for course in courses %}
                     <div class="container py-1">
                         <label class="text-grisillo fw-bold my-2">{{ course.name }}</label>
-                        {% for task in course.filtered_tasks %}
-                            <div class="container border p-3 my-1 rounded-4">
-                                <div class="row">
-                                    <div class="col-10">
-                                        <i class="fa-solid fa-list me-3"></i>{{ task.name }}
-                                    </div>
-                                    <div class="col-2 text-center">
-                                        <div class="ms-4 {{ task.color }} p-1 d-inline rounded-4 fs-7">
-                                            {{ task.due_date }}
+                        {% if course.stress_tests.exists %}
+                            {% for test in course.stress_tests.all %}
+                                <div class="container border p-3 my-1 rounded-4">
+                                    <div class="row">
+                                        <div class="col-10">
+                                            <i class="fa-regular fa-clipboard me-3"></i>{{ test.title }}
+                                        </div>
+                                        <div class="col-2 text-center">
+                                            <div class="ms-4 p-1 d-inline rounded-4 fs-7">
+                                                <a href="{% url 'test_view' test.id %}" class="text-decoration-none text-dark">Realizar Test</a>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
+                            {% endfor %}
+                        {% else %}
+                            <div class="alert alert-info mt-3" role="alert">
+                                No tienes tests asignados por el momento
                             </div>
-                        {% endfor %}
+                        {% endif %}
                     </div>
                 {% empty %}
-                    <p class="text-center">No tienes tareas asignadas actualmente.</p>
+                    <div class="alert alert-info mt-3" role="alert">
+                        No estas asignado a un courso por el momento
+                    </div>
                 {% endfor %}
             </div>
-
         </div>
     </div>
 

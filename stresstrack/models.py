@@ -44,13 +44,62 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
     def __str__(self):
         return f"{self.email} ({self.get_role_display()})"
 
+
 class Course(models.Model):
     name = models.CharField(max_length=100)
-    teacher = models.ForeignKey('CustomUser', on_delete=models.CASCADE, related_name='teaching_courses')
-    students = models.ManyToManyField('CustomUser', related_name='enrolled_courses', blank=True)
+    teacher = models.ForeignKey('CustomUser', on_delete=models.CASCADE, related_name='teaching_courses', limit_choices_to={'role': 'teacher'})
+    students = models.ManyToManyField('CustomUser', related_name='enrolled_courses', blank=True, limit_choices_to={'role': 'student'})
 
     def __str__(self):
         return self.name
+
+
+class StressTest(models.Model):
+    title = models.CharField(max_length=150)
+    description = models.TextField(blank=True, null=True)
+    course = models.ForeignKey(Course, on_delete=models.CASCADE, related_name='stress_tests')
+
+    def __str__(self):
+        return self.title
+
+
+class Question(models.Model):
+    QUESTION_TYPE_CHOICES = [
+        ('multiple_choice', 'Opción múltiple'),
+        ('scale', 'Escala'),
+    ]
+
+    text = models.CharField(max_length=255)
+    stress_test = models.ForeignKey(StressTest, on_delete=models.CASCADE, related_name='questions')
+
+    def __str__(self):
+        return self.text
+
+
+class ResponseOption(models.TextChoices):
+    NUNCA = 'NUNCA', 'Nunca'
+    RARA_VEZ = 'RARA_VEZ', 'Rara vez'
+    A_VECES = 'A_VECES', 'A veces'
+    CASI_SIEMPRE = 'CASI_SIEMPRE', 'Casi siempre'
+    SIEMPRE = 'SIEMPRE', 'Siempre'
+
+
+class StudentResponse(models.Model):
+    student = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name='responses', limit_choices_to={'role': 'student'})
+    stress_test = models.ForeignKey(StressTest, on_delete=models.CASCADE, related_name='responses')
+    submitted_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"Respuesta de {self.student.email} para {self.stress_test.title}"
+
+
+class ResponseDetail(models.Model):
+    student_response = models.ForeignKey(StudentResponse, on_delete=models.CASCADE, related_name='details')
+    question = models.ForeignKey(Question, on_delete=models.CASCADE)
+    selected_option = models.CharField(max_length=15, choices=ResponseOption.choices)
+
+    def __str__(self):
+        return f"Respuesta a {self.question.text} -> {self.get_selected_option_display()}"
 
 class Task(models.Model):
     name = models.CharField(max_length=100)

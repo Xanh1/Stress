@@ -2,10 +2,10 @@ from django.shortcuts import render, redirect
 from django.http import HttpResponse
 from django.contrib.auth import login, authenticate, logout
 from django.contrib.auth.decorators import login_required
-from .models import Task
+from django.db.models import Prefetch
+from .models import Task, Course, StressTest, Question, ResponseOption, StudentResponse, ResponseDetail
 from datetime import date
 from .forms import CustomUserCreationForm, CustomAuthenticationForm
-
 
 def home(request):
     if request.method == 'POST':
@@ -51,11 +51,6 @@ def register(request):
 
     return render(request, 'register.html', {'form_register': form_register, 'form_login': form_login})
 
-from datetime import date
-from django.contrib.auth.decorators import login_required
-from django.shortcuts import render
-from .models import Task
-
 @login_required
 def dashboard(request):
     user = request.user
@@ -98,10 +93,17 @@ def dashboard(request):
 
 @login_required
 def dash_task(request):
-    courses = request.user.enrolled_courses.prefetch_related('tasks').all()
+
+    tasks_filter = Prefetch(
+        'tasks',
+        queryset=Task.objects.filter(due_date__gte=date.today()),
+        to_attr='filtered_tasks'
+    )
+
+    courses = request.user.enrolled_courses.prefetch_related(tasks_filter).all()
 
     for course in courses:
-        for task in course.tasks.all():
+        for task in course.filtered_tasks:
             days_left = (task.due_date - date.today()).days
             if days_left > 7:
                 task.color = 'bg-good'  # Verde
@@ -112,3 +114,46 @@ def dash_task(request):
 
     return render(request, 'dashboard/dash_task.html', {'courses': courses})
 
+@login_required
+def student_tests(request):
+
+    courses = Course.objects.filter(students=request.user)
+    
+    return render(request, 'dashboard/dash_test.html', {'courses': courses})
+
+from django.shortcuts import render, redirect
+from django.contrib.auth.decorators import login_required
+from django.http import Http404
+from .models import StressTest, Question, ResponseOption, StudentResponse, ResponseDetail
+
+@login_required
+def test_view(request, test_id):
+    try:
+        test = StressTest.objects.get(id=test_id)
+        questions = test.questions.all()
+    except StressTest.DoesNotExist:
+        raise Http404("Test no encontrado")
+
+    if request.method == 'POST':
+        # Guardar la respuesta del estudiante
+        student_response = StudentResponse.objects.create(
+            student=request.user,
+            stress_test=test
+        )
+
+        for question in questions:
+            selected_option_value = request.POST.get(f'question_{question.id}')
+            if selected_option_value:
+                selected_option = ResponseOption.objects.get(value=selected_option_value, question=question)
+                ResponseDetail.objects.create(
+                    student_response=student_response,
+                    question=question,
+                    selected_option=selected_option.value
+                )
+
+        return redirect('student_tests')  # URL a la que se redirige después de completar el test
+
+    return render(request, 'test/test.html', {
+        'test': test,
+        'questions': questions,
+    })
