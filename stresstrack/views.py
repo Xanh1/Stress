@@ -1,4 +1,4 @@
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
 from django.http import HttpResponse
 from django.contrib.auth import login, authenticate, logout
 from django.contrib.auth.decorators import login_required
@@ -6,6 +6,9 @@ from django.db.models import Prefetch
 from .models import Task, Course, StressTest, Question, ResponseOption, StudentResponse, ResponseDetail
 from datetime import date
 from .forms import CustomUserCreationForm, CustomAuthenticationForm
+from django.db.models import Count, Q
+from django.http import Http404
+
 
 def home(request):
     if request.method == 'POST':
@@ -57,7 +60,7 @@ def dashboard(request):
     courses = request.user.enrolled_courses.all()
     tasks = Task.objects.filter(course__in=courses, due_date__gte=date.today()).order_by('due_date')
     
-    stress = 61
+    stress = user.stress
     color = ""
 
     if 0 <= stress <= 20:
@@ -114,46 +117,76 @@ def dash_task(request):
 
     return render(request, 'dashboard/dash_task.html', {'courses': courses})
 
+
 @login_required
 def student_tests(request):
-
+    # Obtener todos los cursos que el estudiante está tomando
     courses = Course.objects.filter(students=request.user)
-    
-    return render(request, 'dashboard/dash_test.html', {'courses': courses})
 
-from django.shortcuts import render, redirect
-from django.contrib.auth.decorators import login_required
-from django.http import Http404
-from .models import StressTest, Question, ResponseOption, StudentResponse, ResponseDetail
+    # Definir una consulta de prefetch que obtiene los tests de los cursos con la anotación 'has_taken'
+    stress_tests_with_annotations = StressTest.objects.annotate(
+        has_taken=Count(
+            'responses',
+            filter=Q(responses__student=request.user)
+        )
+    )
+
+    # Usar Prefetch para incluir los tests anotados en cada curso
+    courses = courses.prefetch_related(Prefetch('stress_tests', queryset=stress_tests_with_annotations))
+
+    # Pasar los cursos al template
+    return render(request, 'dashboard/dash_test.html', {'courses': courses})
 
 @login_required
 def test_view(request, test_id):
-    try:
-        test = StressTest.objects.get(id=test_id)
-        questions = test.questions.all()
-    except StressTest.DoesNotExist:
-        raise Http404("Test no encontrado")
+    test = get_object_or_404(StressTest, id=test_id)
+    questions = test.questions.all()
 
     if request.method == 'POST':
-        # Guardar la respuesta del estudiante
+        # Verifica que el usuario sea un estudiante
+        if request.user.role != 'student':
+            raise Http404("Solo los estudiantes pueden responder este test.")
+
+        # Verifica si ya respondió
+        if StudentResponse.objects.filter(student=request.user, stress_test=test).exists():
+            return redirect('student_tests')
+
+        # Crear la respuesta del estudiante
         student_response = StudentResponse.objects.create(
             student=request.user,
             stress_test=test
         )
 
+        total_score = 0
         for question in questions:
             selected_option_value = request.POST.get(f'question_{question.id}')
-            if selected_option_value:
-                selected_option = ResponseOption.objects.get(value=selected_option_value, question=question)
+            if selected_option_value and selected_option_value.isdigit():
+                # Suma los valores de las opciones seleccionadas
+                total_score += int(selected_option_value)
                 ResponseDetail.objects.create(
                     student_response=student_response,
                     question=question,
-                    selected_option=selected_option.value
+                    selected_option=selected_option_value
                 )
+            else:
+                # Si falta alguna respuesta, elimina la respuesta parcial y regresa un error
+                student_response.delete()
+                return render(request, 'test/test.html', {
+                    'test': test,
+                    'questions': questions,
+                    'opts': ResponseOption.choices,
+                    'error': f"Debe responder todas las preguntas correctamente."
+                })
 
-        return redirect('student_tests')  # URL a la que se redirige después de completar el test
+        
+        # Actualiza el nivel de estrés del usuario como entero
+        request.user.stress = total_score
+        request.user.save()
+
+        return redirect('student_tests')
 
     return render(request, 'test/test.html', {
         'test': test,
         'questions': questions,
+        'opts': ResponseOption.choices,
     })

@@ -26,7 +26,7 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
         ('teacher', 'Profesor'),
         ('superuser', 'Superusuario'),
     ]
-    
+
     first_name = models.CharField(max_length=50, blank=True)
     last_name = models.CharField(max_length=50, blank=True)
     dni = models.CharField(max_length=20, unique=True, blank=True, null=True)
@@ -35,14 +35,17 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
 
     is_active = models.BooleanField(default=True)
     is_staff = models.BooleanField(default=False)
-    
+
+    stress = models.IntegerField(default=0)  # Campo cambiado a IntegerField
+
     objects = CustomUserManager()
-    
+
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = []
 
     def __str__(self):
         return f"{self.email} ({self.get_role_display()})"
+
 
 
 class Course(models.Model):
@@ -71,27 +74,35 @@ class Question(models.Model):
 
     text = models.CharField(max_length=255)
     stress_test = models.ForeignKey(StressTest, on_delete=models.CASCADE, related_name='questions')
+    question_type = models.CharField(max_length=20, choices=QUESTION_TYPE_CHOICES, default='multiple_choice')
 
     def __str__(self):
         return self.text
 
 
-class ResponseOption(models.TextChoices):
-    NUNCA = 'NUNCA', 'Nunca'
-    RARA_VEZ = 'RARA_VEZ', 'Rara vez'
-    A_VECES = 'A_VECES', 'A veces'
-    CASI_SIEMPRE = 'CASI_SIEMPRE', 'Casi siempre'
-    SIEMPRE = 'SIEMPRE', 'Siempre'
+class ResponseOption(models.IntegerChoices):
+    NUNCA = 1, 'Nunca'
+    RARA_VEZ = 2, 'Rara vez'
+    A_VECES = 3, 'A veces'
+    CASI_SIEMPRE = 4, 'Casi siempre'
+    SIEMPRE = 5, 'Siempre'
 
 
 class StudentResponse(models.Model):
-    student = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name='responses', limit_choices_to={'role': 'student'})
+    student = models.ForeignKey(
+        CustomUser,
+        on_delete=models.CASCADE,
+        related_name='responses',
+        limit_choices_to={'role': 'student'}
+    )
     stress_test = models.ForeignKey(StressTest, on_delete=models.CASCADE, related_name='responses')
     submitted_at = models.DateTimeField(auto_now_add=True)
 
+    class Meta:
+        unique_together = ('student', 'stress_test')  # Evita respuestas duplicadas
+
     def __str__(self):
         return f"Respuesta de {self.student.email} para {self.stress_test.title}"
-
 
 class ResponseDetail(models.Model):
     student_response = models.ForeignKey(StudentResponse, on_delete=models.CASCADE, related_name='details')

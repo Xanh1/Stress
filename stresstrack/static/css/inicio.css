@@ -68,6 +68,10 @@ footer {
     background-color: #ffdbdb;
 }
 
+.bg-white {
+    background-color: white;
+}
+
 
 .main-content {
     flex-grow: 3;

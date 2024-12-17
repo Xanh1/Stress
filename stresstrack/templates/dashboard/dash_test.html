@@ -38,20 +38,29 @@
                     <div class="container py-1">
                         <label class="text-grisillo fw-bold my-2">{{ course.name }}</label>
                         {% if course.stress_tests.exists %}
-                            {% for test in course.stress_tests.all %}
-                                <div class="container border p-3 my-1 rounded-4">
-                                    <div class="row">
-                                        <div class="col-10">
-                                            <i class="fa-regular fa-clipboard me-3"></i>{{ test.title }}
-                                        </div>
-                                        <div class="col-2 text-center">
-                                            <div class="ms-4 p-1 d-inline rounded-4 fs-7">
-                                                <a href="{% url 'test_view' test.id %}" class="text-decoration-none text-dark">Realizar Test</a>
+                            {% for test in tests %}
+                                <div class="container py-1">
+                                    <label class="text-grisillo fw-bold my-2">{{ test.course.name }}</label>
+                                    <div class="container border p-3 my-1 rounded-4">
+                                        <div class="row">
+                                            <div class="col-10">
+                                                <i class="fa-regular fa-clipboard me-3"></i>{{ test.title }}
+                                            </div>
+                                            <div class="col-2 text-center">
+                                                {% if test.has_taken > 0 %}
+                                                    <div class="ms-4 p-1 d-inline rounded-4 fs-7">
+                                                        <span class="text-muted">Test completado</span>
+                                                    </div>
+                                                {% else %}
+                                                    <div class="ms-4 p-1 d-inline rounded-4 fs-7">
+                                                        <a href="{% url 'test_view' test.id %}" class="text-decoration-none text-dark">Realizar Test</a>
+                                                    </div>
+                                                {% endif %}
                                             </div>
                                         </div>
                                     </div>
                                 </div>
-                            {% endfor %}
+                            {% endfor %}                    
                         {% else %}
                             <div class="alert alert-info mt-3" role="alert">
                                 No tienes tests asignados por el momento
@@ -60,7 +69,7 @@
                     </div>
                 {% empty %}
                     <div class="alert alert-info mt-3" role="alert">
-                        No estas asignado a un courso por el momento
+                        No estás asignado a un curso por el momento
                     </div>
                 {% endfor %}
             </div>
