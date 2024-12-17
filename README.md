@@ -1,3 +1,10 @@
+# Instalacion
+
+1. Create a virtual enviroment
+2. Activate the virtual enviroment
+3. Install dependecies "pip install -r requirements.txt"
+4. Run project "py manager.py runserver"
+
 Rango de niveles de estrés y mensajes sugeridos:
 
     Niveles bajos (0-20):
